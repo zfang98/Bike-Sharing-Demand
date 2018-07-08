@@ -1,6 +1,6 @@
 # Bike-Sharing-Demand
 ###
-#### Description: biking is environmental-friendly and good for people's health. Study has shown that, because there are more people cycling in the city of Vancouver, the expenses on health care had been distinctively decreaed. I think cycling should be encouraged when both the distance and time are allowed for the purpose of exercising and transportation. 
+#### Description: biking is good for the environment and people's health. Study has shown that, because there are more people cycling in the city of Vancouver, the expenses on health care had been distinctively decreaed. I think cycling should be encouraged when both the distance and time are allowed for the purpose of exercising and transportation. 
 ###
 ####  This project use history data to predict how many bikes will be in demand in every hour of a day.
 ###### Documents: Train.csv: Data used for training models
