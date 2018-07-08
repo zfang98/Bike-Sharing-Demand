@@ -20,11 +20,13 @@
 ###### registered: _numeric_
 ###### count: _numeric_
 
-#### Metric used to evaluate the models: Root Mean Squared Logarithmic Error (RMSLE)
+#### Metric used to evaluate the models: 
+##### Root Mean Squared Logarithmic Error (RMSLE)
 
 
 
-###### Softwares and operation system: Anaconda3, Python 3.7, OSX 10.10.5
+##### Software and operating system: 
+###### Anaconda3, Python 3.7, OSX 10.10.5
 ##### Contribution: investigted distribution of numerical features, filled missing data, checked outliers, and deleted unuseful features. Applied multiple algorithms from Scikit learn: Regression, Support Vector Machine(SVM), Random Forest, K-Nearest Neighbors (KNN), XGBoost to predict bike sharing demand.
 
 
