@@ -6,21 +6,24 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn import metrics,svm
 import xgboost as xg
+from sklearn.model_selection import RandomizedSearchCV
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import make_scorer
+from scipy.stats.stats import pearsonr
 
 
 train=pd.read_csv('train.csv')
 test=pd.read_csv('test.csv')
-print (train.loc[1:5,:])
+print (train.head(3))
 print (train.info())
 
 
-print (train.describe())
 train.corr()
-sns.boxplot(train['count'])
+sns.boxplot(train['hour'],train['count'])
 plt.show()
 train=train[np.abs(train['count']-train['count'].mean())<=3*train['count'].std()]
-
+sns.boxplot(train['count'])
+plt.show()
 # features workingday, weather, season, holiday are categorical features
 print(train['workingday'].value_counts())
 print(train['holiday'].value_counts())
@@ -39,13 +42,13 @@ weather_features=train[['weather','humidity','temp','atemp','windspeed']]
 sns.heatmap(weather_features.corr())
 # investigate correlation between all features
 sns.heatmap(train.corr())
-hihgly correlated features: season/month, temp/atep, registered/count
+# hihgly correlated features: season/month, temp/atep, registered/count
 #registered and causal are features that not exist in test data. should be removed when used for training models
 # one the other hand, month and atep were chosen as training features.
 # investigating the values in feature 'windspeed'
 plt.hist(test['windspeed'],bins=30)
 plt.show()
-use randomforst to fit in 0 wind speed
+# use randomforst to fit in 0 wind speed
 
 wind0=train[train['windspeed']==0]
 windnot0=train[train['windspeed']!=0]
@@ -80,6 +83,7 @@ del new_train['hour']
 del new_train['weather']
 # print (list(new_train))
 y=new_train['count'].values
+y=np.log1p(y)
 final_train=new_train.drop(['count'],axis=1)
 
 X_train, X_test, y_train, y_test = train_test_split(final_train,y,test_size=0.20)
@@ -94,9 +98,10 @@ X_train, X_test, y_train, y_test = train_test_split(final_train,y,test_size=0.20
 # print (list(final_train))
 #
 def rmsle(truth, predict):
-    log_diff=(np.log1p(truth)-np.log1p(predict))**2
-    error=((log_diff.sum())/len(truth))**0.5
+    log_diff=(truth-predict)**2
+    error=np.sqrt(log_diff.mean())
     return error
+rmse = make_scorer(rmsle, greater_is_better=False)
 #-------------
 
 rf=RandomForestRegressor(n_estimators=1000,random_state=0)
@@ -122,9 +127,34 @@ error=rmsle(y_test, pred)
 print (error)
 #-------------
 ## xgboost when n_estimator=100, error=0.537, when n_estimator=500,error=0.533,
-when 1000, error=0.543
-xgb=xg.XGBRegressor(learning_rate=0.1,n_estimator=300)
-xgb.fit(X_train,y_train)
-pred=xgb.predict(X_test)
-error=rmsle(y_test, pred)
-print (error)
+xgb_regre = xg.XGBRegressor(booster='gbtree',random_state=0)
+sample_ratio=[0.8]
+L1_regularization=[0.05,0.01]
+estimator=[100]
+max_depth=[4]
+learning_rate=[0.15]
+features_ratio=[0.6,0.5]
+
+XGB_grid = {'n_estimator':estimator,
+           'learning_rate':learning_rate,
+           'subsample':sample_ratio,
+           'colsample_bytree':features_ratio,
+           'max_depth':max_depth,
+           'reg_alpha':L1_regularization,
+           }
+
+XGB_random = RandomizedSearchCV(estimator = xgb_regre, param_distributions = XGB_grid,
+                                n_iter = 100, cv = 3, verbose=2, random_state=42, n_jobs = -1,scoring=rmse)
+
+XGB_random.fit(X_train,y_train)
+xgb_predict=XGB_random.predict(X_test)
+r_value,p_value = pearsonr(y_test,xgb_predict)
+error=rmsle(y_test,xgb_predict)
+print ('Pearson correational coefficiant is '+str(round(r_value,2)))
+print ('Root mean squared error is '+str(round(error,2)))
+
+plt.scatter(y_test,xgb_predict)
+plt.show()
+
+y_pred=np.exp(xgb_predict)-1
+print (y_pred)
